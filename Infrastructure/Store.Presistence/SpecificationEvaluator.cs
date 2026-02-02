@@ -20,9 +20,30 @@ namespace Store.Presistence
             {
                 query = query.Where(spec.Criteria);// _context.Products.Where(spec.Criteria)
             }
+
+
+            if(spec.Orderby is not null)
+            {
+                query = query.OrderBy(spec.Orderby);
+            }
+            else if(spec.OrderbyDescending is not null)
+            {
+                query = query.OrderByDescending(spec.OrderbyDescending);
+            }
+            else if (spec.OrderbyDescendingName is not null)
+            {
+                query = query.OrderByDescending(spec.OrderbyDescendingName);
+            }
+
+
+            if(spec.IsPagination)
+            {
+                query = query.Skip(spec.Skip).Take(spec.Take);
+            }
             // Apply includes
             // _context.Products.Where(spec.Criteria).Include(p=>p.Brand).Include(P=>P.Type)
             query = spec.Includes.Aggregate(query, (current, includeExpression) => current.Include(includeExpression));
+
 
             return query;
         }
