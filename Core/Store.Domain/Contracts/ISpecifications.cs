@@ -14,5 +14,12 @@ namespace Store.Domain.Contracts
 
         // The criteria to filter entities
         Expression<Func<TEntity, bool>>? Criteria { get; set; }
+
+        Expression<Func<TEntity, object>>? Orderby { get; set; }
+        Expression<Func<TEntity, object>>? OrderbyDescending { get; set; }
+        Expression<Func<TEntity, object>>? OrderbyDescendingName { get; set; }
+         int Skip { get; set; }
+         int Take { get; set; }
+         bool IsPagination { get; set; }
     }
 }
