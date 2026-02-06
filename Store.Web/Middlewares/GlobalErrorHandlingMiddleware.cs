@@ -1,4 +1,5 @@
-﻿using Store.Domain.Exceptions.NotFound;
+﻿using Store.Domain.Exceptions.BadRequest;
+using Store.Domain.Exceptions.NotFound;
 using Store.Shared.ErrorModels;
 
 namespace Store.Web.Middlewares
@@ -17,9 +18,10 @@ namespace Store.Web.Middlewares
         {
             try
             {
+                // error happens in the next middleware when not found endpoint or other exception
                 await _next.Invoke(context);
-
-                if(context.Response.StatusCode == 404)
+                // if  app not hit exception and StatusCode == 404 Handle because routing middleware could not find any endpoint for the request
+                if (context.Response.StatusCode == 404)
                 {
                     context.Response.ContentType = "application/json";
                     var response = new ErrorDetails
@@ -32,9 +34,11 @@ namespace Store.Web.Middlewares
             }
             catch (Exception ex)
             {
+                // app  hit exception Set the response status code based on exception type
                 context.Response.StatusCode = ex switch
                 {
                    NotFoundExeception => StatusCodes.Status404NotFound,
+                    BadRequestException => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError
                 };
 
