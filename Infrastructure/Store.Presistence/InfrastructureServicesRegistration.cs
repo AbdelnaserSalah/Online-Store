@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Store.Domain.Contracts;
 using Store.Presistence.Data.Contexts;
+using Store.Presistence.Identity.Context;
 using Store.Presistence.Repostories;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,13 @@ namespace Store.Presistence
             {
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
+
+            services.AddDbContext<IdentityStoreDbContext>(options =>
+            {
+                options.UseSqlServer(configuration.GetConnectionString("IdentityConnection"));
+            });
+
+
             services.AddScoped<IDbInitializer, DbInitializer>();
             services.AddScoped<IUnitofWork, Unitofwork>();
             services.AddScoped<IBasketRepository, BasketRepository>();
