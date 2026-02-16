@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -19,8 +21,58 @@ using System.Threading.Tasks;
 
 namespace Store.Services.Auth
 {
-    public class AuthService(UserManager<AppUser> userManager,IOptions<JwtOptions> options) : IAuthService
+    public class AuthService(UserManager<AppUser> userManager,IOptions<JwtOptions> options,IMapper mapper) : IAuthService
     {
+        public async Task<bool> CheckEmailExistsAsync(string Email)
+        {
+           return await userManager.FindByEmailAsync(Email) != null;
+        }
+
+        public async Task<AddressDto?> GetCurrentUserAddressAsync(string email)
+        {
+           var user= await userManager.Users.Include(o=>o.Address).FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            if(user is null) throw new UserNotFoundException(email);
+
+            return mapper.Map<AddressDto>(user.Address);
+
+        }
+
+        public async Task<UserResponse?> GetCurrentUserAsync(string email)
+        {
+          var user= await userManager.FindByEmailAsync(email);
+          if (user is null) throw new UserNotFoundException(email);
+
+            return new UserResponse()
+            {
+                DisplayName = user.DisplayName,
+                Email = user.Email,
+                Token = await GenerateTokenAsync(user)
+            };
+        }
+
+        public async Task<AddressDto?> UpdateCurrentUserAddressAsync(AddressDto request, string email)
+        {
+            var user = await userManager.Users.Include(o => o.Address).FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            if (user is null) throw new UserNotFoundException(email);
+
+            if(user.Address is null)
+            {
+                user.Address = mapper.Map<Address>(request);
+            }
+            else
+            {
+               user.Address.FirstName = request.FirstName;
+                user.Address.LastName = request.LastName;
+                user.Address.Street = request.Street;
+                user.Address.City = request.City;
+                user.Address.Country = request.Country;
+            }
+            await userManager.UpdateAsync(user);
+
+            return mapper.Map<AddressDto>(user.Address);
+        }
+
+
         public async Task<UserResponse> LoginAsync(LoginRequest request)
         {
            var user=await userManager.FindByEmailAsync(request.Email);
@@ -60,6 +112,8 @@ namespace Store.Services.Auth
                 Token = await GenerateTokenAsync(user)
             };
         }
+
+        
 
         private async Task<string> GenerateTokenAsync(AppUser user)
         {
@@ -102,5 +156,7 @@ namespace Store.Services.Auth
             // convert token to string
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        
     }
 }
